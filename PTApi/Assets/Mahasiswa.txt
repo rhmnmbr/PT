@@ -1,0 +1,175 @@
+namespace PT
+{
+    [Table("BioMhs")] //attribut adalah utk menandai kelas/field yg akan dibaca dapper
+    public class Mahasiswa : BaseData
+    {
+        [ExplicitKey]
+        public string Nim { get; set; } //nim menjadi explicitkey yang merupakan primary. hanya affect ke 1 baris field di bawahnya
+        public string Nama { get; set; }
+        public DateTime? TgLahir { get; set; } //penggunaan tanda tanya agar property nya bisa null di database
+        public string TpLahir { get; set; }
+        public string JenisKelamin { get; set; }
+        [Write(false)] //menyebabkan Klasses tidak ditulis ke database. hanya affect ke 1 baris field di bawahnya
+        public List<Kelas> Klasses { get; set; }
+        //public List<Nilai> Nilais { get; set; }
+
+
+
+
+        public static List<Mahasiswa> LoadAll()
+        {
+            try
+            {
+                using (IDbConnection conn = CreateConnection()) //agar koneksi tidak dishare
+                {
+                    var items = conn.GetAll<Mahasiswa>().ToList(); //orm (dapper) yang bikin listnya
+                    items.ForEach(x => x.State = ObjState.Loaded);
+                    return items;
+                }
+            }
+            catch (Exception)
+            { return null; }
+        }
+
+        public static Mahasiswa Find(string nim)
+        {
+            using (IDbConnection conn = CreateConnection())
+            {
+                var item = conn.Get<Mahasiswa>(nim);
+                item.State = ObjState.Loaded;
+                return item;
+            }
+        }
+
+        public bool Load()
+        {
+            using (IDbConnection conn = CreateConnection())
+            {
+                try
+                {
+                    var ret = conn.Get<Mahasiswa>(this.Nim);
+                    ret.CopyTo(this);
+                    ret.state = this.state = ObjState.Loaded;
+                    return true;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
+        }
+
+        public bool Save()
+        {
+            bool ret = false;
+            using (IDbConnection conn = CreateConnection())
+            {
+                try
+                {
+                    if (this.state == ObjState.New)
+                    {
+                        CreatedAt = LastModifiedAt = DateTime.Now;
+                        ModifiedBy = GetUserId();
+                        var rslt = conn.Insert(this);
+                        this.state = ObjState.Loaded;
+                        ret = true;
+                    }
+                    else if (this.state == ObjState.Modified)
+                    {
+                        LastModifiedAt = DateTime.Now;
+                        ModifiedBy = GetUserId();
+                        if (conn.Update(this))
+                        {
+                            this.state = ObjState.Loaded;
+                            ret = true;
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                }
+                return ret;
+            }
+        }
+
+        public bool Delete()
+        {
+            bool ret = false;
+            using (IDbConnection conn = CreateConnection())
+            {
+                conn.Open();
+                using (var ts = conn.BeginTransaction())
+                {
+                    if (conn.Delete(this))
+                    {
+                        int num = conn.Execute("delete from mhskelas where nim=@nim", new { this.Nim });
+                        this.state = ObjState.New;
+                        ret = true;
+                    }
+                    ts.Commit();
+                }
+
+                return ret;
+            }
+        }
+
+
+        public bool LoadKlasses()
+        {
+            using (IDbConnection conn = CreateConnection())
+            {
+                this.Klasses = conn.Query<Kelas>("SELECT k.kodeKelas, k.Nama FROM BioMhs m INNER JOIN mhsKelas mk ON m.nim = mk.nim inner join kelas k on mk.kodekelas = k.kodekelas where m.nim = @nim ", new { this.Nim }).ToList();
+                return true;
+            }
+        }
+
+        public bool LoadNilaiKelas(string kodekelas)
+        {
+            this.LoadKlasses();
+            List<Kelas> klasses = new List<Kelas>();
+            foreach (Kelas k in this.Klasses)
+            {
+                if (k.KodeKelas == kodekelas)
+                {
+                    using (IDbConnection conn = CreateConnection())
+                    {
+                        k.Nilais = conn.Query<Nilai>("select mk.nim, k.kodekelas, k.nama, mk.nilaimid, mk.nilaisem from kelas k inner join mhskelas mk on k.kodekelas=mk.kodekelas where mk.nim=@nim AND mk.kodekelas=@kodekelas", new { this.Nim, k.KodeKelas }).ToList();
+                        foreach (Nilai nil in k.Nilais) { nil.getNilaimutu(); }
+                    }
+                    klasses.Add(k);
+                }
+            }
+            this.Klasses = klasses;
+            return true;
+        }
+
+        public bool LoadNilai()
+        {
+            this.LoadKlasses();
+            foreach (Kelas k in this.Klasses)
+            {
+                using (IDbConnection conn = CreateConnection())
+                {
+                    k.Nilais = conn.Query<Nilai>("select mk.nim, k.kodekelas, k.nama, mk.nilaimid, mk.nilaisem from kelas k inner join mhskelas mk on k.kodekelas=mk.kodekelas where mk.nim=@nim AND mk.kodekelas=@kodekelas", new { this.Nim, k.KodeKelas }).ToList();
+                    foreach (Nilai nil in k.Nilais) { nil.getNilaimutu(); }
+
+                }
+            }
+            return true;
+        }
+
+        public static void Serialize(Stream s, Mahasiswa mhs)
+        {
+            DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(Mahasiswa));
+            ser.WriteObject(s, mhs);
+        }
+
+        public static Mahasiswa DeSerialize(Stream s)
+        {
+            DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(Mahasiswa));
+            return (Mahasiswa)ser.ReadObject(s);
+        }
+
+
+    }
+}

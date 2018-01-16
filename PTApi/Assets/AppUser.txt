@@ -1,0 +1,230 @@
+namespace PT
+{
+    [Table("AppUser")]
+    public class AppUser : BaseData
+    {
+        [ExplicitKey]
+        public string Id { get; set; }
+        public string Nama { get; set; }
+        public string Password { get; set; }
+        public DateTime RegisterDate { get; set; }
+        public int ActivationStatus { get; set; }
+        public DateTime? LastLogin { get; set; }
+        public string Token { get; set; }
+
+
+        public static string CreateSessionNumber()
+        {
+            using (RNGCryptoServiceProvider rg = new RNGCryptoServiceProvider())
+            {
+                byte[] rno = new byte[5];
+                rg.GetBytes(rno);
+                int randomvalue = BitConverter.ToInt32(rno, 0);
+                return randomvalue.ToString();
+            }
+        }
+
+        public string CheckSession(string tkn)
+        {
+            if (tkn.Length < 10 ) { return "inv"; }
+            else
+            {
+                var usr = FindUserByToken(tkn);
+                string[] tkncomponent = tkn.Split(new char[] { '|' });
+                DateTime sesstime = DateTime.Parse(tkncomponent[1]);
+                TimeSpan remainsess = DateTime.Now.Subtract(sesstime);
+                TimeSpan timelimit = new TimeSpan(00, 30, 02);
+
+                if (tkn != Token.Trim()) { return "inv"; }
+                else if (remainsess > timelimit) { return "exp"; }
+                else { return "val"; }
+            }
+        }
+
+        public static List<AppUser> LoadAll()
+        {
+            using (IDbConnection conn = CreateConnectionLogin())
+            {
+                var items = conn.GetAll<AppUser>().ToList();
+                items.ForEach(x => x.State = ObjState.Loaded);
+                return items;
+            }
+        }
+
+        public static AppUser Find(string id)
+        {
+            using (IDbConnection conn = CreateConnectionLogin())
+            {
+                var item = conn.Get<AppUser>(id);
+                item.State = ObjState.Loaded;
+                return item;
+            }
+        }
+
+        public bool Load()
+        {
+            using (IDbConnection conn = CreateConnectionLogin())
+            {
+                try
+                {
+                    var ret = conn.Get<AppUser>(Id);
+                    ret.CopyTo(this);
+                    ret.state = this.state = ObjState.Loaded;
+                    return true;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
+        }
+
+        public bool Save()
+        {
+            bool ret = false;
+            using (IDbConnection conn = CreateConnectionLogin())
+            {
+                try
+                {
+
+                    if (this.state == ObjState.New)
+                    {
+                        CreatedAt = LastModifiedAt = DateTime.Now;
+                        ModifiedBy = GetUserId();
+                        var rslt = conn.Insert(this);
+                        this.state = ObjState.Loaded;
+                        ret = true;
+                    }
+                    else if (this.state == ObjState.Loaded || this.state == ObjState.Modified)
+                    {
+                        LastModifiedAt = DateTime.Now;
+                        ModifiedBy = GetUserId();
+                        if (conn.Update(this))
+                        {
+                            this.state = ObjState.Loaded;
+                            ret = true;
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                }
+                return ret;
+            }
+        }
+
+        public bool Delete()
+        {
+            bool ret = false;
+            using (IDbConnection conn = CreateConnectionLogin())
+            {
+                if (conn.Delete(this))
+                {
+                    this.state = ObjState.New;
+                    ret = true;
+                }
+
+                return ret;
+            }
+        }
+
+
+        public bool Authenticate()
+        {
+            try
+            {
+                string pwd = Utility.GetHash(this.Password.Trim());
+                if (this.Load())
+                {
+                    if (pwd == this.Password.Trim())
+                    {
+                        if (ConfirmUserID(this)) ;
+                        {
+                            return true;
+                        }
+                    }
+                }
+                this.Password = "";
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public string GetToken()
+        {
+            if (this.Authenticate())
+            {
+                this.LastLogin = DateTime.Now;
+                this.state = ObjState.Modified;
+                Save();
+                string tknsession = Utility.GetToken(this.Id) + "|" + CreateSessionNumber();
+                Token = tknsession;
+
+                using (IDbConnection conn = CreateConnectionLogin()) //write token to table appuser
+                {
+                    if (conn.Update(this))
+                    {
+                        this.state = ObjState.Loaded;
+                    }
+                }
+                return Token;
+
+            }
+            return "";
+        }
+
+        public bool ClearToken()
+        {
+            var ret = false;
+            if (this.Authenticate())
+            {
+                this.LastLogin = DateTime.Now;
+                this.state = ObjState.Modified;
+                Save();
+                Token = string.Empty;
+
+                using (IDbConnection conn = CreateConnectionLogin()) //write token to table appuser
+                {
+                    if (conn.Update(this))
+                    {
+                        this.state = ObjState.Loaded;
+                        ret = true;
+                    }
+                }
+            }
+            return ret;
+        }
+
+        public bool Register()
+        {
+            this.State = ObjState.New;
+            this.Password = Utility.GetHash(this.Password);
+            this.RegisterDate = DateTime.Now;
+            return Save();
+
+        }
+
+        public static AppUser FindUserByToken(string tok)
+        {
+            string[] toks = tok.Split(new char[] { '|' });
+            AppUser usr = new AppUser() { Id = toks[0] };
+            usr.Load();
+            return usr;
+        }
+
+        public static void Serialize(Stream s, AppUser user)
+        {
+            DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(AppUser));
+            ser.WriteObject(s, user);
+        }
+
+        public static AppUser DeSerialize(Stream s)
+        {
+            DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(AppUser));
+            return (AppUser)ser.ReadObject(s);
+        }
+    }
+}
