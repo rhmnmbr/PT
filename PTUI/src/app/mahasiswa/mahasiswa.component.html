@@ -1,0 +1,80 @@
+<mat-accordion>
+  <mat-expansion-panel #addform>
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        Add Mahasiswa
+      </mat-panel-title>
+      <mat-panel-description>
+
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+
+    <mat-form-field>
+      <input matInput #mhsNim placeholder="NIM" disabled [value]="this.newNim" matTooltip="10 digit">
+    </mat-form-field>
+
+    <mat-form-field>
+      <input matInput #mhsNama placeholder="Nama">
+      <button mat-button *ngIf="mhsNama.value" matSuffix mat-icon-button aria-label="Clear" (click)="mhsNama.value=''">
+        <mat-icon> close </mat-icon>
+      </button>
+    </mat-form-field>
+
+    <mat-form-field>
+      <input matInput #mhsTgLahir placeholder="Tanggal Lahir" [matDatepicker]="dp3" disabled>
+      <mat-datepicker-toggle matSuffix [for]="dp3"></mat-datepicker-toggle>
+      <mat-datepicker #dp3 disabled="false"></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field>
+      <input matInput #mhsTpLahir placeholder="Tempat Lahir">
+      <button mat-button *ngIf="mhsTpLahir.value" matSuffix mat-icon-button aria-label="Clear" (click)="mhsTpLahir.value=''">
+        <mat-icon> close </mat-icon>
+      </button>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-select #mhsJK placeholder="Jenis Kelamin">
+        <mat-option value="L">Laki-laki</mat-option>
+        <mat-option value="P">Perempuan</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button *ngIf="mhsNim.value && mhsNama.value && mhsTgLahir.value && mhsTpLahir.value && mhsJK.value" mat-fab color="primary"
+      (click)="add(mhsNim.value, mhsNama.value, mhsTgLahir.value, mhsTpLahir.value, mhsJK.value); addform.expanded = false;"
+      matTooltip="Confirm?">
+      <mat-icon aria-hidden="true">done</mat-icon>
+    </button>
+
+  </mat-expansion-panel>
+</mat-accordion>
+
+<div class="example-header">
+  <mat-form-field>
+    <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Filter">
+  </mat-form-field>
+</div>
+
+<div class="example-container mat-elevation-z8">
+
+  <mat-table [dataSource]="dataSource" matSort>
+
+    <ng-container matColumnDef="Nim">
+      <mat-header-cell *matHeaderCellDef mat-sort-header> Nim </mat-header-cell>
+      <mat-cell *matCellDef="let row">
+        <button mat-button routerLink="/mahasiswa/{{row.Nim}}" matTooltip="Show Detail"> {{row.Nim}} </button>
+      </mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="Nama">
+      <mat-header-cell *matHeaderCellDef mat-sort-header> Nama </mat-header-cell>
+      <mat-cell *matCellDef="let row"> {{row.Nama}} </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;">
+    </mat-row>
+  </mat-table>
+
+  <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]"></mat-paginator>
+</div>
