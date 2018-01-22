@@ -17,8 +17,7 @@ export class MahasiswaService {
   constructor(private http: HttpClient) { }
 
   getMhss(): Observable<Mahasiswa[]> {
-    const url = `${this.mhssUrl}/`;
-    return this.http.get<Mahasiswa[]>(url);
+    return this.http.get<Mahasiswa[]>(this.mhssUrl);
   }
 
   addMhs(mhs: Mahasiswa): Observable<Mahasiswa> {

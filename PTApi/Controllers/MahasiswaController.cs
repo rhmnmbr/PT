@@ -54,8 +54,9 @@ namespace PTApi.Controllers
             if (nimAlreadyExists) return new StatusCodeResult(StatusCodes.Status409Conflict);
             _unitOfWork.CommonRepo.Add(mhs);
             await _unitOfWork.Complete();
-            return CreatedAtRoute("GetMhs", new { mhs.Nim },
-                _mapper.Map<MhsVm>(mhs));
+            return Ok(_mapper.Map<MhsVm>(mhs));
+            // return CreatedAtRoute("GetMhs", new { mhs.Nim },
+            //     _mapper.Map<MhsVm>(mhs));
         }
 
         [AllowAnonymous]

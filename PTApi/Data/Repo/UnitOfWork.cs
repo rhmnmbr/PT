@@ -13,6 +13,8 @@ namespace PTApi.Data.Repo
     public interface IUnitOfWork : IDisposable
     {
         IMahasiswaRepo Mahasiswa { get; }
+        IKelasRepo Kelas { get; }
+        IDosenRepo Dosen { get; }
 
         Task<bool> Complete();
     }
@@ -48,9 +50,13 @@ namespace PTApi.Data.Repo
         {
             _context = context;
             Mahasiswa = new MahasiswaRepo(_context);
+            Kelas = new KelasRepo(_context);
+            Dosen = new DosenRepo(_context);
         }
 
         public IMahasiswaRepo Mahasiswa { get; }
+        public IKelasRepo Kelas { get; }
+        public IDosenRepo Dosen { get; }
 
         public async Task<bool> Complete()
         {

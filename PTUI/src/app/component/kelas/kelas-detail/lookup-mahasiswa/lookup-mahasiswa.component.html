@@ -1,0 +1,9 @@
+<div mat-dialog-content>
+  <mat-list>
+    <mat-option *ngFor="let mhs of mhss | orderBy: order" (click)="confirmEnroll(mhs.Nim, kelas.KodeKelas, mhs.Nama);" [disabled]="isDisabled(mhs.Nim)">
+      <strong>{{mhs.Nim}}</strong>&nbsp;&nbsp;&nbsp;{{mhs.Nama}}
+    </mat-option>
+  </mat-list>
+</div>
+<div mat-dialog-actions>
+</div>

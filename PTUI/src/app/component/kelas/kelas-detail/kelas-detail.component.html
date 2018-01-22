@@ -1,0 +1,83 @@
+<br>
+<div class="mat-typography">
+  <table class="mat-body-2">
+    <tr>
+      <td>Kode Kelas</td>
+      <td *ngIf="kelas">
+        <strong>:&nbsp;&nbsp;&nbsp;{{kelas.KodeKelas}}</strong>
+      </td>
+    </tr>
+    <tr>
+      <td>Nama Kelas</td>
+      <td *ngIf="kelas">
+        <strong>:&nbsp;&nbsp;&nbsp;{{kelas.Nama}}</strong>
+      </td>
+    </tr>
+    <tr>
+      <td>Dosen</td>
+      <td *ngIf="dosen">:&nbsp;&nbsp;&nbsp;{{dosen.Nama}}</td>
+      <td *ngIf="!dosen">:&nbsp;&nbsp;&nbsp;(Belum Terdaftar)</td>
+    </tr>
+  </table>
+  <h2 class="mat-h2" style="text-align:center">
+    <strong>Daftar Mahasiswa</strong>
+  </h2>
+</div>
+
+<div class="example-header">
+  <mat-form-field>
+    <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Filter">
+  </mat-form-field>
+  <button mat-raised-button color="primary" class="add-btn" (click)="openDialog()" matTooltip="Enroll Mahasiswa">
+    <mat-icon>person_add</mat-icon>
+  </button>
+</div>
+
+<div class="example-container mat-elevation-z8">
+
+  <mat-table [dataSource]="dataSource" matSort matSortActive="Nim" matSortDirection="asc">
+
+    <ng-container matColumnDef="Nim">
+      <mat-header-cell *matHeaderCellDef mat-sort-header> Nim </mat-header-cell>
+      <mat-cell *matCellDef="let row"> {{row.Nim}} </mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="Nama">
+      <mat-header-cell *matHeaderCellDef mat-sort-header> Nama </mat-header-cell>
+      <mat-cell *matCellDef="let row"> {{row.Mahasiswa.Nama}} </mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="NilaiMid">
+      <mat-header-cell *matHeaderCellDef mat-sort-header> Nilai UTS </mat-header-cell>
+      <mat-cell *matCellDef="let row"> {{row.NilaiMid}} </mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="NilaiSem">
+      <mat-header-cell *matHeaderCellDef mat-sort-header> Nilai UAS </mat-header-cell>
+      <mat-cell *matCellDef="let row">{{row.NilaiSem}} </mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="NilaiMutu">
+      <mat-header-cell *matHeaderCellDef mat-sort-header> Nilai Mutu </mat-header-cell>
+      <mat-cell *matCellDef="let row"> {{row.NilaiMutu}} </mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="Buttons">
+      <mat-header-cell *matHeaderCellDef mat-sort-header></mat-header-cell>
+      <mat-cell *matCellDef="let row">
+        <button mat-icon-button color="primary" matTooltip="Update Nilai?" (click)="openDialog2(kelas.KodeKelas, row.Nim, row.Mahasiswa.Nama, row.NilaiMid, row.NilaiSem)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="primary" matTooltip="UnEnroll {{row.Mahasiswa.Nama}}?" (click)="confirmUnEnroll(kelas.KodeKelas, row.Nim, row.Mahasiswa.Nama)">
+          <mat-icon>delete_forever</mat-icon>
+        </button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;">
+    </mat-row>
+  </mat-table>
+
+  <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]"></mat-paginator>
+</div>

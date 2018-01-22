@@ -7,6 +7,9 @@ export class Mahasiswa {
         public TgLahir: string,
         public TpLahir: string,
         public JenisKelamin: string,
-        public Klasses: Kelas[]
+        public Klasses: Kelas[],
+        public NilaiMid: string,
+        public NilaiSem: string,
+        public NilaiMutu: string
     ) { }
 }

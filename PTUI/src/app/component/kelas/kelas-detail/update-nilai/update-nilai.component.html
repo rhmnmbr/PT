@@ -1,0 +1,18 @@
+<div mat-dialog-content>
+  <div>
+    <mat-form-field [floatLabel]="options.value.floatLabel">
+      <mat-label>Nilai UTS</mat-label>
+      <input type="number" min="0" max="100" matInput [(ngModel)]="this.data.uts">
+    </mat-form-field>
+  </div>
+  <div>
+    <mat-form-field [floatLabel]="options.value.floatLabel">
+      <mat-label>Nilai UAS</mat-label>
+      <input type="number" min="0" max="100" matInput [(ngModel)]="this.data.uas">
+    </mat-form-field>
+  </div>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="onNoClick()">Cancel</button>
+  <button mat-button (click)="confirmUpdateMhs(this.data.kode, this.data.nim, this.data.nama, this.data.uts, this.data.uas)">Update</button>
+</div>
